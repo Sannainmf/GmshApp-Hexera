@@ -1,6 +1,11 @@
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 import os
+import subprocess
+import tempfile
+import json
+import shutil
+from pathlib import Path
 
 class GMSHBackend:
     def __init__(self, model_path="./model"):
@@ -8,6 +13,8 @@ class GMSHBackend:
         self.model = None
         self.tokenizer = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.output_dir = Path("./output")
+        self.output_dir.mkdir(exist_ok=True)
     
     def is_model_loaded(self):
         return self.model is not None and self.tokenizer is not None
@@ -88,6 +95,87 @@ class GMSHBackend:
             print(f"Error generating script: {e}")
             raise
     
+    def execute_gmsh_script(self, script_content, output_filename="generated_mesh"):
+        """Execute GMSH script and generate mesh files"""
+        try:
+            # Create temporary directory for this execution
+            with tempfile.TemporaryDirectory() as temp_dir:
+                temp_path = Path(temp_dir)
+                
+                # Save script to temporary .geo file
+                geo_file = temp_path / f"{output_filename}.geo"
+                with open(geo_file, 'w') as f:
+                    f.write(script_content)
+                
+                # Execute GMSH command
+                gmsh_command = [
+                    "gmsh",  # GMSH executable
+                    "-2",    # 2D mesh generation
+                    "-o",    # Output file
+                    str(temp_path / f"{output_filename}.msh"),  # Output mesh file
+                    str(geo_file)  # Input .geo file
+                ]
+                
+                print(f"Executing GMSH command: {' '.join(gmsh_command)}")
+                
+                # Run GMSH
+                result = subprocess.run(
+                    gmsh_command,
+                    capture_output=True,
+                    text=True,
+                    cwd=temp_path,
+                    timeout=60  # 60 second timeout
+                )
+                
+                if result.returncode != 0:
+                    raise RuntimeError(f"GMSH execution failed: {result.stderr}")
+                
+                # Check if output files were created
+                msh_file = temp_path / f"{output_filename}.msh"
+                if not msh_file.exists():
+                    raise RuntimeError("GMSH did not generate output mesh file")
+                
+                # Copy files to output directory
+                output_files = {}
+                for file_path in temp_path.glob(f"{output_filename}.*"):
+                    dest_path = self.output_dir / file_path.name
+                    shutil.copy2(file_path, dest_path)
+                    output_files[file_path.suffix] = str(dest_path)
+                
+                return {
+                    "status": "success",
+                    "message": "GMSH script executed successfully",
+                    "output_files": output_files,
+                    "gmsh_output": result.stdout,
+                    "script_content": script_content
+                }
+                
+        except subprocess.TimeoutExpired:
+            raise RuntimeError("GMSH execution timed out (60 seconds)")
+        except FileNotFoundError:
+            raise RuntimeError("GMSH executable not found. Please install GMSH and ensure it's in your PATH")
+        except Exception as e:
+            raise RuntimeError(f"GMSH execution error: {str(e)}")
+    
+    def generate_and_execute(self, prompt, max_tokens=2000, temperature=0.7, output_filename="generated_mesh"):
+        """Complete pipeline: Generate script and execute with GMSH"""
+        try:
+            # Step 1: Generate GMSH script
+            print("Generating GMSH script...")
+            script = self.generate_script(prompt, max_tokens, temperature)
+            
+            # Step 2: Execute the script
+            print("Executing GMSH script...")
+            result = self.execute_gmsh_script(script, output_filename)
+            
+            # Add generated script to result
+            result["generated_script"] = script
+            
+            return result
+            
+        except Exception as e:
+            raise RuntimeError(f"Pipeline execution failed: {str(e)}")
+    
     def get_model_info(self):
         """Get information about the loaded model"""
         if not self.is_model_loaded():
@@ -100,3 +188,24 @@ class GMSHBackend:
             "model_type": type(self.model).__name__,
             "tokenizer_type": type(self.tokenizer).__name__
         }
+    
+    def list_output_files(self):
+        """List all generated output files"""
+        files = []
+        if self.output_dir.exists():
+            for file_path in self.output_dir.iterdir():
+                if file_path.is_file():
+                    files.append({
+                        "filename": file_path.name,
+                        "size": file_path.stat().st_size,
+                        "created": file_path.stat().st_ctime
+                    })
+        return files
+    
+    def cleanup_output_files(self):
+        """Clean up all output files"""
+        if self.output_dir.exists():
+            for file_path in self.output_dir.iterdir():
+                if file_path.is_file():
+                    file_path.unlink()
+        return {"message": "Output files cleaned up successfully"}
