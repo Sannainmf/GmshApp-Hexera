@@ -34,7 +34,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy backend code
 COPY backend/ ./backend/
 COPY gmsh.py ./
-COPY model/ ./model/
 
 # Create output directory
 RUN mkdir -p output
@@ -47,7 +46,6 @@ EXPOSE 8000
 
 # Set environment variables
 ENV PYTHONPATH=/app
-ENV MODEL_PATH=/app/model
 
 # Start the application
 CMD ["python", "-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
