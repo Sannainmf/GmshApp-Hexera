@@ -1,172 +1,196 @@
-# 🚀 GMSH Script Generator Backend
+# AI-Powered Mesh Generator
 
-A **complete pipeline** FastAPI backend for generating and executing GMSH scripts using a fine-tuned language model.
+A full-stack application that generates 3D meshes using AI-powered GMSH scripting and provides interactive visualization.
 
-## 🎯 **Complete Pipeline**
+## 🏗️ Architecture
 
 ```
-User Input → LLM → Prompt → LLM → GMSH Code → GMSH Engine → Mesh Files
+Backend: User Input → LLM → Code → GMSH → Mesh Files
+Frontend: Mesh Files → Rendered Mesh Visualization → Interactive Display
 ```
 
-**What this backend does:**
-1. **Takes user text input** (e.g., "Create a 2D mesh with a hole")
-2. **Generates GMSH script** using fine-tuned LLM
-3. **Executes the script** with GMSH engine
-4. **Returns mesh files** (.geo, .msh) ready for use
+## ✨ Features
 
-## ✨ **Features**
+- **AI-Powered Generation**: Uses a fine-tuned LLM to generate GMSH scripts from natural language descriptions
+- **Interactive Visualization**: 3D mesh viewer with Three.js for real-time visualization
+- **Multiple Export Formats**: Download meshes in MSH, STL, and GEO formats
+- **Responsive UI**: Modern, responsive interface with real-time feedback
+- **Docker Deployment**: Easy deployment with Docker and Docker Compose
 
-- **🚀 Complete Pipeline**: From text input to mesh files in one API call
-- **🤖 AI-Powered**: Fine-tuned language model for GMSH script generation
-- **🔧 GMSH Integration**: Direct execution of generated scripts
-- **📁 File Management**: Generate, store, and download mesh files
-- **🌐 RESTful API**: Easy integration with any frontend
-- **📊 Health Monitoring**: System status and model management
-- **⚡ Fast**: Optimized for quick mesh generation
+## 🚀 Quick Start
 
-## 🛠️ **Setup**
+### Option 1: Docker Deployment (Recommended)
+
+1. **Clone and navigate to the project:**
+   ```bash
+   cd /path/to/your/project
+   ```
+
+2. **Make the deployment script executable and run it:**
+   ```bash
+   chmod +x deploy.sh
+   ./deploy.sh
+   ```
+
+3. **Open your browser:**
+   - Application: http://localhost:8000
+   - API Documentation: http://localhost:8000/docs
+
+### Option 2: Development Mode
 
 1. **Install dependencies:**
-```bash
-pip install -r requirements.txt
+   ```bash
+   # Python dependencies
+   pip install -r requirements.txt
+   
+   # Node.js dependencies
+   cd frontend
+   npm install
+   cd ..
+   ```
+
+2. **Start the application:**
+   ```bash
+   chmod +x start.sh
+   ./start.sh
+   ```
+
+3. **Access the application:**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000
+
+## 📁 Project Structure
+
+```
+├── backend/
+│   └── main.py              # FastAPI backend server
+├── frontend/
+│   ├── src/
+│   │   ├── components/      # React components
+│   │   └── App.js          # Main React app
+│   └── package.json        # Frontend dependencies
+├── model/                  # LLM model files
+├── output/                 # Generated mesh files
+├── gmsh.py                # Original LLM integration
+├── requirements.txt        # Python dependencies
+├── Dockerfile             # Docker configuration
+├── docker-compose.yml     # Docker Compose setup
+└── deploy.sh              # Deployment script
 ```
 
-2. **Install GMSH:**
-   - **Windows**: Download from [GMSH website](http://gmsh.info/)
-   - **Mac**: `brew install gmsh`
-   - **Linux**: `sudo apt-get install gmsh`
+## 🎯 Usage
 
-3. **Set up environment:**
+1. **Enter a mesh description** in the left panel (e.g., "Create a 2D rectangular mesh with a circular hole at the center")
+
+2. **Configure mesh parameters:**
+   - Mesh Type: 2D or 3D
+   - Element Size: Controls mesh density
+
+3. **Click "Generate Mesh"** to create the mesh using AI
+
+4. **View the result** in the 3D viewer on the right
+
+5. **Download files** in various formats (MSH, STL, GEO)
+
+## 🔧 API Endpoints
+
+- `POST /generate-mesh` - Generate a new mesh from description
+- `GET /mesh/{mesh_id}/files` - Get available mesh files
+- `GET /mesh/{mesh_id}/download/{file_type}` - Download mesh files
+- `GET /mesh/{mesh_id}/preview` - Get mesh data for visualization
+
+## 🛠️ Development
+
+### Backend Development
 ```bash
-cp env_example.txt .env
-# Edit .env if needed
+cd backend
+python -m uvicorn main:app --reload
 ```
 
-4. **Verify model files** are in `./model` directory
-
-## 🚀 **Usage**
-
-### **Start the server:**
+### Frontend Development
 ```bash
-python app.py
+cd frontend
+npm start
 ```
 
-The API will be available at `http://localhost:8000`
-
-### **Complete Pipeline Example:**
-
+### Testing
 ```bash
-# 1. Load the model
-curl -X POST http://localhost:8000/load-model
-
-# 2. Execute complete pipeline (generate + execute)
-curl -X POST "http://localhost:8000/execute-gmsh" \
+# Test the API
+curl -X POST "http://localhost:8000/generate-mesh" \
      -H "Content-Type: application/json" \
-     -d '{
-       "prompt": "Generate a GMSH script for a 2D rectangular mesh with a circular hole",
-       "max_tokens": 2000,
-       "temperature": 0.7,
-       "output_filename": "rectangular_mesh"
-     }'
-
-# 3. Download generated files
-curl -O http://localhost:8000/download/rectangular_mesh.geo
-curl -O http://localhost:8000/download/rectangular_mesh.msh
+     -d '{"prompt": "Create a simple square mesh", "mesh_type": "2D", "element_size": 0.1}'
 ```
 
-## 📡 **API Endpoints**
+## 🐳 Docker Commands
 
-### **Core Pipeline:**
-- `POST /execute-gmsh` - **Complete pipeline** (generate + execute)
-- `POST /generate` - Generate GMSH script only
-- `POST /execute-existing-script` - Execute existing script
+```bash
+# Build and start
+docker-compose up --build
 
-### **Model Management:**
-- `POST /load-model` - Load ML model
-- `GET /model-info` - Model information
+# View logs
+docker-compose logs -f
 
-### **File Management:**
-- `GET /output-files` - List generated files
-- `GET /download/{filename}` - Download files
-- `DELETE /cleanup` - Clean up files
+# Stop the application
+docker-compose down
 
-### **System:**
-- `GET /` - API information
-- `GET /health` - Health check
-
-## 📁 **File Structure**
-
-```
-gmsh-backend/
-├── app.py                   # Main FastAPI application
-├── gmsh_backend.py          # Backend service with GMSH integration
-├── config.py                # Configuration management
-├── requirements.txt         # Python dependencies
-├── README.md                # This file
-├── SETUP.md                 # Detailed setup guide
-├── API_DOCS.md              # Complete API documentation
-├── env_example.txt          # Environment template
-├── gmsh.py                  # Original script
-├── model/                   # ML model files
-└── output/                  # Generated mesh files (created automatically)
+# Rebuild without cache
+docker-compose build --no-cache
 ```
 
-## 🔧 **How It Works**
+## 📋 Requirements
 
-1. **User sends text prompt** via API
-2. **LLM generates GMSH script** from the prompt
-3. **Backend saves script** to temporary file
-4. **GMSH executes script** and generates mesh
-5. **Results are processed** and stored
-6. **User downloads** generated mesh files
+### System Requirements
+- Docker & Docker Compose (for deployment)
+- OR Python 3.9+ & Node.js 18+ (for development)
 
-## 📋 **Requirements**
+### Model Requirements
+- The application expects the LLM model files to be in the `./model/` directory
+- Model files should include: `config.json`, `tokenizer.json`, `model.safetensors`, etc.
 
-- **Python 3.8+**
-- **GMSH** (mesh generation engine)
-- **PyTorch** (ML framework)
-- **Transformers** (Hugging Face)
-- **FastAPI** (web framework)
+## 🔍 Troubleshooting
 
-## 🎯 **Use Cases**
+### Common Issues
 
-- **Research**: Quick mesh generation for simulations
-- **Education**: Teaching computational geometry
-- **Prototyping**: Fast mesh design iterations
-- **Automation**: Batch mesh generation
-- **Integration**: Embed in larger applications
+1. **Model not loading:**
+   - Ensure model files are in the `./model/` directory
+   - Check that all required model files are present
 
-## 📚 **Documentation**
+2. **GMSH errors:**
+   - Verify GMSH is properly installed in the Docker container
+   - Check the generated GMSH script for syntax errors
 
-- **`SETUP.md`** - Detailed setup instructions
-- **`API_DOCS.md`** - Complete API reference
-- **`env_example.txt`** - Configuration template
+3. **Frontend not loading:**
+   - Ensure the backend is running on port 8000
+   - Check browser console for CORS errors
 
-## 🚨 **Important Notes**
+4. **Port conflicts:**
+   - Change ports in `docker-compose.yml` if 8000 is already in use
+   - Update frontend proxy settings if needed
 
-- **Model must be loaded** before generating scripts
-- **GMSH must be installed** and in your PATH
-- **Generated files** are stored in `./output/` directory
-- **60-second timeout** for GMSH execution
-- **Automatic cleanup** available via API
+### Logs
+```bash
+# View application logs
+docker-compose logs mesh-generator
 
-## 🔮 **Future Enhancements**
+# View real-time logs
+docker-compose logs -f mesh-generator
+```
 
-- **3D mesh support**
-- **Mesh quality optimization**
-- **Batch processing**
-- **User authentication**
-- **Mesh visualization**
-- **Cloud deployment**
+## 🤝 Contributing
 
-## 📞 **Support**
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
-If you encounter issues:
-1. Check the health endpoint: `http://localhost:8000/health`
-2. Verify GMSH installation: `gmsh --version`
-3. Check error messages in terminal
-4. Review the setup guide in `SETUP.md`
+## 📄 License
 
----
+This project is licensed under the MIT License.
 
-**Your complete GMSH mesh generation pipeline is ready! 🎉**
+## 🙏 Acknowledgments
+
+- GMSH for mesh generation capabilities
+- Three.js for 3D visualization
+- FastAPI for the backend framework
+- React for the frontend framework

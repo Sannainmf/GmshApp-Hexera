@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  mesh-generator:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./output:/app/output
+      - ./model:/app/model
+    environment:
+      - PYTHONPATH=/app
+      - MODEL_PATH=/app/model
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
