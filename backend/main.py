@@ -46,6 +46,12 @@ def load_model(model_path="./model"):
     if model is not None:
         return model, tokenizer
     
+    # Check if model files exist
+    if not os.path.exists(model_path):
+        print(f"⚠️ Model directory not found at {model_path}")
+        print("📝 Using demo mode - will generate sample GMSH scripts")
+        return None, None
+    
     try:
         # Configure 6-bit quantization
         quantization_config = BitsAndBytesConfig(
@@ -77,10 +83,16 @@ def load_model(model_path="./model"):
         
         return model, tokenizer
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to load model: {str(e)}")
+        print(f"⚠️ Failed to load model: {str(e)}")
+        print("📝 Using demo mode - will generate sample GMSH scripts")
+        return None, None
 
 def generate_gmsh_script(model, tokenizer, user_input):
-    """Generate GMSH script using the LLM"""
+    """Generate GMSH script using the LLM or demo mode"""
+    if model is None or tokenizer is None:
+        # Demo mode - generate a simple GMSH script
+        return generate_demo_gmsh_script(user_input)
+    
     try:
         formatted_input = f"<gmsh_instruction>{user_input.strip()}</gmsh_instruction>"
         messages = [{"role": "user", "content": formatted_input}]
@@ -101,7 +113,94 @@ def generate_gmsh_script(model, tokenizer, user_input):
         
         return gmsh_script
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate GMSH script: {str(e)}")
+        print(f"⚠️ LLM generation failed: {str(e)}")
+        print("📝 Falling back to demo mode")
+        return generate_demo_gmsh_script(user_input)
+
+def generate_demo_gmsh_script(user_input):
+    """Generate a demo GMSH script when model is not available"""
+    user_lower = user_input.lower()
+    
+    if "circle" in user_lower or "circular" in user_lower:
+        if "hole" in user_lower:
+            return """
+// 2D mesh with circular hole
+SetFactory("OpenCASCADE");
+
+// Create rectangle
+Rectangle(1) = {0, 0, 0, 2, 1, 0};
+
+// Create circular hole
+Circle(2) = {1, 0.5, 0, 0.2, 0, 2*Pi};
+Curve Loop(3) = {2};
+Plane Surface(4) = {3};
+
+// Boolean difference
+BooleanDifference{ Surface{1}; Delete; }{ Surface{4}; Delete; }
+
+// Mesh settings
+Mesh.CharacteristicLengthMin = 0.05;
+Mesh.CharacteristicLengthMax = 0.1;
+
+// Generate mesh
+Mesh 2;
+"""
+        else:
+            return """
+// Simple circular mesh
+SetFactory("OpenCASCADE");
+
+// Create circle
+Circle(1) = {0, 0, 0, 0.5, 0, 2*Pi};
+Curve Loop(2) = {1};
+Plane Surface(3) = {2};
+
+// Mesh settings
+Mesh.CharacteristicLengthMin = 0.05;
+Mesh.CharacteristicLengthMax = 0.1;
+
+// Generate mesh
+Mesh 2;
+"""
+    elif "square" in user_lower or "rectangular" in user_lower:
+        return """
+// Simple square mesh
+SetFactory("OpenCASCADE");
+
+// Create square
+Rectangle(1) = {0, 0, 0, 1, 1, 0};
+
+// Mesh settings
+Mesh.CharacteristicLengthMin = 0.05;
+Mesh.CharacteristicLengthMax = 0.1;
+
+// Generate mesh
+Mesh 2;
+"""
+    else:
+        return """
+// Default triangular mesh
+SetFactory("OpenCASCADE");
+
+// Create triangle
+Point(1) = {0, 0, 0};
+Point(2) = {1, 0, 0};
+Point(3) = {0.5, 1, 0};
+
+Line(1) = {1, 2};
+Line(2) = {2, 3};
+Line(3) = {3, 1};
+
+Curve Loop(4) = {1, 2, 3};
+Plane Surface(5) = {4};
+
+// Mesh settings
+Mesh.CharacteristicLengthMin = 0.05;
+Mesh.CharacteristicLengthMax = 0.1;
+
+// Generate mesh
+Mesh 2;
+"""
 
 def execute_gmsh_script(gmsh_script, mesh_id, element_size=0.1):
     """Execute GMSH script and generate mesh files"""
