@@ -2,14 +2,14 @@
 
 A full-stack application that generates 3D meshes using AI-powered GMSH scripting and provides interactive visualization.
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 Backend: User Input → LLM → Code → GMSH → Mesh Files
 Frontend: Mesh Files → Rendered Mesh Visualization → Interactive Display
 ```
 
-## ✨ Features
+## Features
 
 - **AI-Powered Generation**: Uses a fine-tuned LLM to generate GMSH scripts from natural language descriptions
 - **Interactive Visualization**: 3D mesh viewer with Three.js for real-time visualization
@@ -17,7 +17,7 @@ Frontend: Mesh Files → Rendered Mesh Visualization → Interactive Display
 - **Responsive UI**: Modern, responsive interface with real-time feedback
 - **Docker Deployment**: Easy deployment with Docker and Docker Compose
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Option 1: Docker Deployment (Recommended)
 
@@ -59,7 +59,7 @@ Frontend: Mesh Files → Rendered Mesh Visualization → Interactive Display
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:8000
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 ├── backend/
@@ -78,7 +78,7 @@ Frontend: Mesh Files → Rendered Mesh Visualization → Interactive Display
 └── deploy.sh              # Deployment script
 ```
 
-## 🎯 Usage
+## Usage
 
 1. **Enter a mesh description** in the left panel (e.g., "Create a 2D rectangular mesh with a circular hole at the center")
 
@@ -92,14 +92,14 @@ Frontend: Mesh Files → Rendered Mesh Visualization → Interactive Display
 
 5. **Download files** in various formats (MSH, STL, GEO)
 
-## 🔧 API Endpoints
+## API Endpoints
 
 - `POST /generate-mesh` - Generate a new mesh from description
 - `GET /mesh/{mesh_id}/files` - Get available mesh files
 - `GET /mesh/{mesh_id}/download/{file_type}` - Download mesh files
 - `GET /mesh/{mesh_id}/preview` - Get mesh data for visualization
 
-## 🛠️ Development
+## Development
 
 ### Backend Development
 ```bash
@@ -121,7 +121,7 @@ curl -X POST "http://localhost:8000/generate-mesh" \
      -d '{"prompt": "Create a simple square mesh", "mesh_type": "2D", "element_size": 0.1}'
 ```
 
-## 🐳 Docker Commands
+## Docker Commands
 
 ```bash
 # Build and start
@@ -137,7 +137,7 @@ docker-compose down
 docker-compose build --no-cache
 ```
 
-## 📋 Requirements
+## Requirements
 
 ### System Requirements
 - Docker & Docker Compose (for deployment)
@@ -147,7 +147,7 @@ docker-compose build --no-cache
 - The application expects the LLM model files to be in the `./model/` directory
 - Model files should include: `config.json`, `tokenizer.json`, `model.safetensors`, etc.
 
-## 🔍 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -176,7 +176,7 @@ docker-compose logs mesh-generator
 docker-compose logs -f mesh-generator
 ```
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -184,11 +184,11 @@ docker-compose logs -f mesh-generator
 4. Test thoroughly
 5. Submit a pull request
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License.
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - GMSH for mesh generation capabilities
 - Three.js for 3D visualization
